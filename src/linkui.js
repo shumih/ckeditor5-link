@@ -412,7 +412,7 @@ export default class LinkUI extends Plugin {
       this._addActionsView();
 
       // Be sure panel with link is visible.
-      if (forceVisible) {
+      if (forceVisible && typeof this._balloon === 'function') {
         this._balloon.showStack('main');
       }
 
