@@ -81,7 +81,7 @@ export default class LinkCommand extends Command {
 	 * @fires execute
 	 * @param {String} href Link destination.
 	 */
-	execute( href ) {
+	execute( href, _, text ) {
 		const model = this.editor.model;
 		const selection = model.document.selection;
 
@@ -108,9 +108,9 @@ export default class LinkCommand extends Command {
 
 					attributes.set( 'linkHref', href );
 
-					const node = writer.createText( href, attributes );
+					const node = writer.createText( text, attributes );
 
-					writer.insertContent( node, position );
+					writer.insert( node, position );
 
 					// Create new range wrapping created node.
 					writer.setSelection( writer.createRangeOn( node ) );

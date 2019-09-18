@@ -168,7 +168,7 @@ export default class LinkUI extends Plugin {
       }
 
       const fileName = files[0].name;
-      const url = formView.urlInputView.inputView.element.value = await uploadHandler(files);
+      const url = await uploadHandler(files);
 
       if (url == null) {
         return;
@@ -178,7 +178,7 @@ export default class LinkUI extends Plugin {
         );
       }
 
-      editor.execute('link', url, formView.getDecoratorSwitchesState());
+      editor.execute('link', url, formView.getDecoratorSwitchesState(), fileName);
       this._closeFormView();
     });
 
@@ -187,7 +187,7 @@ export default class LinkUI extends Plugin {
       editor.execute(
         'link',
         formView.urlInputView.inputView.element.value,
-        formView.getDecoratorSwitchesState()
+        formView.getDecoratorSwitchesState(),
       );
       this._closeFormView();
     });
