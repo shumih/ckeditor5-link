@@ -10,6 +10,7 @@
 import Command from '@ckeditor/ckeditor5-core/src/command';
 import findLinkRange from './findlinkrange';
 import toMap from '@ckeditor/ckeditor5-utils/src/tomap';
+import Collection from '@ckeditor/ckeditor5-utils/src/collection';
 
 /**
  * The link command. It is used by the {@link module:link/link~Link link feature}.
@@ -25,12 +26,40 @@ export default class LinkCommand extends Command {
 	 * @member {Object|undefined} #value
 	 */
 
+	constructor( editor ) {
+		super( editor );
+
+		/**
+		 * A collection of {@link module:link/utils~ManualDecorator manual decorators}
+		 * corresponding to the {@link module:link/link~LinkConfig#decorators decorator configuration}.
+		 *
+		 * You can consider it a model with states of manual decorators added to the currently selected link.
+		 *
+		 * @readonly
+		 * @type {module:utils/collection~Collection}
+		 */
+		this.manualDecorators = new Collection();
+	}
+
+	/**
+	 * Synchronizes the state of {@link #manualDecorators} with the currently present elements in the model.
+	 */
+	restoreManualDecoratorStates() {
+		for ( const manualDecorator of this.manualDecorators ) {
+			manualDecorator.value = this._getDecoratorStateFromModel( manualDecorator.id );
+		}
+	}
+
 	/**
 	 * @inheritDoc
 	 */
 	refresh() {
 		const model = this.editor.model;
 		const doc = model.document;
+
+		for ( const manualDecorator of this.manualDecorators ) {
+			manualDecorator.value = this._getDecoratorStateFromModel( manualDecorator.id );
+		}
 
 		this.value = doc.selection.getAttribute( 'linkHref' );
 		this.isEnabled = model.schema.checkAttributeInSelection( doc.selection, 'linkHref' );
@@ -64,7 +93,7 @@ export default class LinkCommand extends Command {
 				// When selection is inside text with `linkHref` attribute.
 				if ( selection.hasAttribute( 'linkHref' ) ) {
 					// Then update `linkHref` value.
-					const linkRange = findLinkRange( selection.getFirstPosition(), selection.getAttribute( 'linkHref' ), model );
+					const linkRange = findLinkRange( position, selection.getAttribute( 'linkHref' ), model );
 
 					writer.setAttribute( 'linkHref', href, linkRange );
 
@@ -81,7 +110,7 @@ export default class LinkCommand extends Command {
 
 					const node = writer.createText( href, attributes );
 
-					writer.insert( node, position );
+					writer.insertContent( node, position );
 
 					// Create new range wrapping created node.
 					writer.setSelection( writer.createRangeOn( node ) );
@@ -96,5 +125,10 @@ export default class LinkCommand extends Command {
 				}
 			}
 		} );
+	}
+
+	_getDecoratorStateFromModel( decoratorName ) {
+		const doc = this.editor.model.document;
+		return doc.selection.getAttribute( decoratorName ) || false;
 	}
 }
