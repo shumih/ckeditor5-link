@@ -11,6 +11,7 @@ import View from '@ckeditor/ckeditor5-ui/src/view';
 import ViewCollection from '@ckeditor/ckeditor5-ui/src/viewcollection';
 
 import ButtonView from '@ckeditor/ckeditor5-ui/src/button/buttonview';
+import UploadButtonView from '@ckeditor/ckeditor5-upload/src/ui/filedialogbuttonview';
 import SwitchButtonView from '@ckeditor/ckeditor5-ui/src/button/switchbuttonview';
 import LabeledInputView from '@ckeditor/ckeditor5-ui/src/labeledinput/labeledinputview';
 import InputTextView from '@ckeditor/ckeditor5-ui/src/inputtext/inputtextview';
@@ -22,6 +23,7 @@ import KeystrokeHandler from '@ckeditor/ckeditor5-utils/src/keystrokehandler';
 
 import checkIcon from '@ckeditor/ckeditor5-core/theme/icons/check.svg';
 import cancelIcon from '@ckeditor/ckeditor5-core/theme/icons/cancel.svg';
+import uploadIcon from '../theme/icons/upload.svg';
 import '../../theme/linkform.css';
 
 /**
@@ -32,307 +34,328 @@ import '../../theme/linkform.css';
  * @extends module:ui/view~View
  */
 export default class LinkFormView extends View {
-	/**
-	 * Creates an instance of the {@link module:link/ui/linkformview~LinkFormView} class.
-	 *
-	 * Also see {@link #render}.
-	 *
-	 * @param {module:utils/locale~Locale} [locale] The localization services instance.
-	 * @param {module:utils/collection~Collection} [manualDecorators] Reference to manual decorators in
-	 * {@link module:link/linkcommand~LinkCommand#manualDecorators}.
-	 */
-	constructor( locale, manualDecorators = [] ) {
-		super( locale );
+  /**
+   * Creates an instance of the {@link module:link/ui/linkformview~LinkFormView} class.
+   *
+   * Also see {@link #render}.
+   *
+   * @param {module:utils/locale~Locale} [locale] The localization services instance.
+   * @param {module:utils/collection~Collection} [manualDecorators] Reference to manual decorators in
+   * {@link module:link/linkcommand~LinkCommand#manualDecorators}.
+   */
+  constructor(locale, manualDecorators = []) {
+    super(locale);
 
-		const t = locale.t;
+    const t = locale.t;
 
-		/**
-		 * Tracks information about DOM focus in the form.
-		 *
-		 * @readonly
-		 * @member {module:utils/focustracker~FocusTracker}
-		 */
-		this.focusTracker = new FocusTracker();
+    /**
+     * Tracks information about DOM focus in the form.
+     *
+     * @readonly
+     * @member {module:utils/focustracker~FocusTracker}
+     */
+    this.focusTracker = new FocusTracker();
 
-		/**
-		 * An instance of the {@link module:utils/keystrokehandler~KeystrokeHandler}.
-		 *
-		 * @readonly
-		 * @member {module:utils/keystrokehandler~KeystrokeHandler}
-		 */
-		this.keystrokes = new KeystrokeHandler();
+    /**
+     * An instance of the {@link module:utils/keystrokehandler~KeystrokeHandler}.
+     *
+     * @readonly
+     * @member {module:utils/keystrokehandler~KeystrokeHandler}
+     */
+    this.keystrokes = new KeystrokeHandler();
 
-		/**
-		 * The URL input view.
-		 *
-		 * @member {module:ui/labeledinput/labeledinputview~LabeledInputView}
-		 */
-		this.urlInputView = this._createUrlInput();
+    /**
+     * The URL input view.
+     *
+     * @member {module:ui/labeledinput/labeledinputview~LabeledInputView}
+     */
+    this.urlInputView = this._createUrlInput();
 
-		/**
-		 * The Save button view.
-		 *
-		 * @member {module:ui/button/buttonview~ButtonView}
-		 */
-		this.saveButtonView = this._createButton( t( 'Save' ), checkIcon, 'ck-button-save' );
-		this.saveButtonView.type = 'submit';
+    /**
+     * The link on uploaded file
+     */
 
-		/**
-		 * The Cancel button view.
-		 *
-		 * @member {module:ui/button/buttonview~ButtonView}
-		 */
-		this.cancelButtonView = this._createButton( t( 'Cancel' ), cancelIcon, 'ck-button-cancel', 'cancel' );
+    this.uploadStorageButtonView = this._createUploadButton(
+      t('Upload'),
+      uploadIcon,
+      'ck-button-storage-upload'
+    );
+    /**
+     * The Save button view.
+     *
+     * @member {module:ui/button/buttonview~ButtonView}
+     */
+    this.saveButtonView = this._createButton(t('Save'), checkIcon, 'ck-button-save');
+    this.saveButtonView.type = 'submit';
 
-		/**
-		 * A collection of {@link module:ui/button/switchbuttonview~SwitchButtonView},
-		 * which corresponds to {@link module:link/linkcommand~LinkCommand#manualDecorators manual decorators}
-		 * configured in the editor.
-		 *
-		 * @private
-		 * @readonly
-		 * @type {module:ui/viewcollection~ViewCollection}
-		 */
-		this._manualDecoratorSwitches = this._createManualDecoratorSwitches( manualDecorators );
+    /**
+     * The Cancel button view.
+     *
+     * @member {module:ui/button/buttonview~ButtonView}
+     */
+    this.cancelButtonView = this._createButton(
+      t('Cancel'),
+      cancelIcon,
+      'ck-button-cancel',
+      'cancel'
+    );
 
-		/**
-		 * A collection of child views in the form.
-		 *
-		 * @readonly
-		 * @type {module:ui/viewcollection~ViewCollection}
-		 */
-		this.children = this._createFormChildren( manualDecorators );
+    /**
+     * A collection of {@link module:ui/button/switchbuttonview~SwitchButtonView},
+     * which corresponds to {@link module:link/linkcommand~LinkCommand#manualDecorators manual decorators}
+     * configured in the editor.
+     *
+     * @private
+     * @readonly
+     * @type {module:ui/viewcollection~ViewCollection}
+     */
+    this._manualDecoratorSwitches = this._createManualDecoratorSwitches(manualDecorators);
 
-		/**
-		 * A collection of views that can be focused in the form.
-		 *
-		 * @readonly
-		 * @protected
-		 * @member {module:ui/viewcollection~ViewCollection}
-		 */
-		this._focusables = new ViewCollection();
+    /**
+     * A collection of child views in the form.
+     *
+     * @readonly
+     * @type {module:ui/viewcollection~ViewCollection}
+     */
+    this.children = this._createFormChildren(manualDecorators);
 
-		/**
-		 * Helps cycling over {@link #_focusables} in the form.
-		 *
-		 * @readonly
-		 * @protected
-		 * @member {module:ui/focuscycler~FocusCycler}
-		 */
-		this._focusCycler = new FocusCycler( {
-			focusables: this._focusables,
-			focusTracker: this.focusTracker,
-			keystrokeHandler: this.keystrokes,
-			actions: {
-				// Navigate form fields backwards using the Shift + Tab keystroke.
-				focusPrevious: 'shift + tab',
+    /**
+     * A collection of views that can be focused in the form.
+     *
+     * @readonly
+     * @protected
+     * @member {module:ui/viewcollection~ViewCollection}
+     */
+    this._focusables = new ViewCollection();
 
-				// Navigate form fields forwards using the Tab key.
-				focusNext: 'tab'
-			}
-		} );
+    /**
+     * Helps cycling over {@link #_focusables} in the form.
+     *
+     * @readonly
+     * @protected
+     * @member {module:ui/focuscycler~FocusCycler}
+     */
+    this._focusCycler = new FocusCycler({
+      focusables: this._focusables,
+      focusTracker: this.focusTracker,
+      keystrokeHandler: this.keystrokes,
+      actions: {
+        // Navigate form fields backwards using the Shift + Tab keystroke.
+        focusPrevious: 'shift + tab',
 
-		const classList = [ 'ck', 'ck-link-form' ];
+        // Navigate form fields forwards using the Tab key.
+        focusNext: 'tab',
+      },
+    });
 
-		if ( manualDecorators.length ) {
-			classList.push( 'ck-link-form_layout-vertical' );
-		}
+    const classList = ['ck', 'ck-link-form'];
 
-		this.setTemplate( {
-			tag: 'form',
+    if (manualDecorators.length) {
+      classList.push('ck-link-form_layout-vertical');
+    }
 
-			attributes: {
-				class: classList,
+    this.setTemplate({
+      tag: 'form',
 
-				// https://github.com/ckeditor/ckeditor5-link/issues/90
-				tabindex: '-1'
-			},
+      attributes: {
+        class: classList,
 
-			children: this.children
-		} );
-	}
+        // https://github.com/ckeditor/ckeditor5-link/issues/90
+        tabindex: '-1',
+      },
 
-	/**
-	 * Obtains the state of the {@link module:ui/button/switchbuttonview~SwitchButtonView switch buttons} representing
-	 * {@link module:link/linkcommand~LinkCommand#manualDecorators manual link decorators}
-	 * in the {@link module:link/ui/linkformview~LinkFormView}.
-	 *
-	 * @returns {Object.<String,Boolean>} Key-value pairs, where the key is the name of the decorator and the value is
-	 * its state.
-	 */
-	getDecoratorSwitchesState() {
-		return Array.from( this._manualDecoratorSwitches ).reduce( ( accumulator, switchButton ) => {
-			accumulator[ switchButton.name ] = switchButton.isOn;
-			return accumulator;
-		}, {} );
-	}
+      children: this.children,
+    });
+  }
 
-	/**
-	 * @inheritDoc
-	 */
-	render() {
-		super.render();
+  /**
+   * Obtains the state of the {@link module:ui/button/switchbuttonview~SwitchButtonView switch buttons} representing
+   * {@link module:link/linkcommand~LinkCommand#manualDecorators manual link decorators}
+   * in the {@link module:link/ui/linkformview~LinkFormView}.
+   *
+   * @returns {Object.<String,Boolean>} Key-value pairs, where the key is the name of the decorator and the value is
+   * its state.
+   */
+  getDecoratorSwitchesState() {
+    return Array.from(this._manualDecoratorSwitches).reduce((accumulator, switchButton) => {
+      accumulator[switchButton.name] = switchButton.isOn;
+      return accumulator;
+    }, {});
+  }
 
-		submitHandler( {
-			view: this
-		} );
+  /**
+   * @inheritDoc
+   */
+  render() {
+    super.render();
 
-		const childViews = [
-			this.urlInputView,
-			...this._manualDecoratorSwitches,
-			this.saveButtonView,
-			this.cancelButtonView
-		];
+    submitHandler({
+      view: this,
+    });
 
-		childViews.forEach( v => {
-			// Register the view as focusable.
-			this._focusables.add( v );
+    const childViews = [
+      this.urlInputView,
+      ...this._manualDecoratorSwitches,
+      this.uploadStorageButtonView,
+      this.saveButtonView,
+      this.cancelButtonView,
+    ];
 
-			// Register the view in the focus tracker.
-			this.focusTracker.add( v.element );
-		} );
+    childViews.forEach(v => {
+      // Register the view as focusable.
+      this._focusables.add(v);
 
-		// Start listening for the keystrokes coming from #element.
-		this.keystrokes.listenTo( this.element );
-	}
+      // Register the view in the focus tracker.
+      this.focusTracker.add(v.element);
+    });
 
-	/**
-	 * Focuses the fist {@link #_focusables} in the form.
-	 */
-	focus() {
-		this._focusCycler.focusFirst();
-	}
+    // Start listening for the keystrokes coming from #element.
+    this.keystrokes.listenTo(this.element);
+  }
 
-	/**
-	 * Creates a labeled input view.
-	 *
-	 * @private
-	 * @returns {module:ui/labeledinput/labeledinputview~LabeledInputView} Labeled input view instance.
-	 */
-	_createUrlInput() {
-		const t = this.locale.t;
+  /**
+   * Focuses the fist {@link #_focusables} in the form.
+   */
+  focus() {
+    this._focusCycler.focusFirst();
+  }
 
-		const labeledInput = new LabeledInputView( this.locale, InputTextView );
+  /**
+   * Creates a labeled input view.
+   *
+   * @private
+   * @returns {module:ui/labeledinput/labeledinputview~LabeledInputView} Labeled input view instance.
+   */
+  _createUrlInput() {
+    const t = this.locale.t;
 
-		labeledInput.label = t( 'Link URL' );
-		labeledInput.inputView.placeholder = 'https://example.com';
+    const labeledInput = new LabeledInputView(this.locale, InputTextView);
 
-		return labeledInput;
-	}
+    labeledInput.label = t('Link URL');
+    labeledInput.inputView.placeholder = 'https://example.com';
 
-	/**
-	 * Creates a button view.
-	 *
-	 * @private
-	 * @param {String} label The button label.
-	 * @param {String} icon The button icon.
-	 * @param {String} className The additional button CSS class name.
-	 * @param {String} [eventName] An event name that the `ButtonView#execute` event will be delegated to.
-	 * @returns {module:ui/button/buttonview~ButtonView} The button view instance.
-	 */
-	_createButton( label, icon, className, eventName ) {
-		const button = new ButtonView( this.locale );
+    return labeledInput;
+  }
 
-		button.set( {
-			label,
-			icon,
-			tooltip: true
-		} );
+  _createUploadButton(label, icon, className) {
+    const view = new UploadButtonView(this.locale);
 
-		button.extendTemplate( {
-			attributes: {
-				class: className
-			}
-		} );
+    this._initButton(view.buttonView, label, icon, className);
 
-		if ( eventName ) {
-			button.delegate( 'execute' ).to( this, eventName );
-		}
+    return view;
+  }
 
-		return button;
-	}
+  /**
+   * Creates a button view.
+   *
+   * @private
+   * @param {String} label The button label.
+   * @param {String} icon The button icon.
+   * @param {String} className The additional button CSS class name.
+   * @param {String} [eventName] An event name that the `ButtonView#execute` event will be delegated to.
+   * @returns {module:ui/button/buttonview~ButtonView} The button view instance.
+   */
+  _createButton(label, icon, className, eventName) {
+    const button = new ButtonView(this.locale);
 
-	/**
-	 * Populates {@link module:ui/viewcollection~ViewCollection} of {@link module:ui/button/switchbuttonview~SwitchButtonView}
-	 * made based on {@link module:link/linkcommand~LinkCommand#manualDecorators}.
-	 *
-	 * @private
-	 * @param {module:utils/collection~Collection} manualDecorators A reference to the
-	 * collection of manual decorators stored in the link command.
-	 * @returns {module:ui/viewcollection~ViewCollection} of switch buttons.
-	 */
-	_createManualDecoratorSwitches( manualDecorators ) {
-		const switches = this.createCollection();
+    return this._initButton(button, label, icon, className, eventName);
+  }
 
-		for ( const manualDecorator of manualDecorators ) {
-			const switchButton = new SwitchButtonView( this.locale );
+  _initButton(button, label, icon, className, eventName) {
+    button.set({
+      label,
+      icon,
+      tooltip: true,
+    });
 
-			switchButton.set( {
-				name: manualDecorator.id,
-				label: manualDecorator.label,
-				withText: true
-			} );
+    button.extendTemplate({
+      attributes: {
+        class: className,
+      },
+    });
 
-			switchButton.bind( 'isOn' ).to( manualDecorator, 'value' );
+    if (eventName) {
+      button.delegate('execute').to(this, eventName);
+    }
 
-			switchButton.on( 'execute', () => {
-				manualDecorator.set( 'value', !switchButton.isOn );
-			} );
+    return button;
+  }
 
-			switches.add( switchButton );
-		}
+  /**
+   * Populates {@link module:ui/viewcollection~ViewCollection} of {@link module:ui/button/switchbuttonview~SwitchButtonView}
+   * made based on {@link module:link/linkcommand~LinkCommand#manualDecorators}.
+   *
+   * @private
+   * @param {module:utils/collection~Collection} manualDecorators A reference to the
+   * collection of manual decorators stored in the link command.
+   * @returns {module:ui/viewcollection~ViewCollection} of switch buttons.
+   */
+  _createManualDecoratorSwitches(manualDecorators) {
+    const switches = this.createCollection();
 
-		return switches;
-	}
+    for (const manualDecorator of manualDecorators) {
+      const switchButton = new SwitchButtonView(this.locale);
 
-	/**
-	 * Populates the {@link #children} collection of the form.
-	 *
-	 * If {@link module:link/linkcommand~LinkCommand#manualDecorators manual decorators} are configured in the editor, it creates an
-	 * additional `View` wrapping all {@link #_manualDecoratorSwitches} switch buttons corresponding
-	 * to these decorators.
-	 *
-	 * @private
-	 * @param {module:utils/collection~Collection} manualDecorators A reference to
-	 * the collection of manual decorators stored in the link command.
-	 * @returns {module:ui/viewcollection~ViewCollection} The children of link form view.
-	 */
-	_createFormChildren( manualDecorators ) {
-		const children = this.createCollection();
+      switchButton.set({
+        name: manualDecorator.id,
+        label: manualDecorator.label,
+        withText: true,
+      });
 
-		children.add( this.urlInputView );
+      switchButton.bind('isOn').to(manualDecorator, 'value');
 
-		if ( manualDecorators.length ) {
-			const additionalButtonsView = new View();
+      switchButton.on('execute', () => {
+        manualDecorator.set('value', !switchButton.isOn);
+      });
 
-			additionalButtonsView.setTemplate( {
-				tag: 'ul',
-				children: this._manualDecoratorSwitches.map( switchButton => ( {
-					tag: 'li',
-					children: [ switchButton ],
-					attributes: {
-						class: [
-							'ck',
-							'ck-list__item'
-						]
-					}
-				} ) ),
-				attributes: {
-					class: [
-						'ck',
-						'ck-reset',
-						'ck-list'
-					]
-				}
-			} );
-			children.add( additionalButtonsView );
-		}
+      switches.add(switchButton);
+    }
 
-		children.add( this.saveButtonView );
-		children.add( this.cancelButtonView );
+    return switches;
+  }
 
-		return children;
-	}
+  /**
+   * Populates the {@link #children} collection of the form.
+   *
+   * If {@link module:link/linkcommand~LinkCommand#manualDecorators manual decorators} are configured in the editor, it creates an
+   * additional `View` wrapping all {@link #_manualDecoratorSwitches} switch buttons corresponding
+   * to these decorators.
+   *
+   * @private
+   * @param {module:utils/collection~Collection} manualDecorators A reference to
+   * the collection of manual decorators stored in the link command.
+   * @returns {module:ui/viewcollection~ViewCollection} The children of link form view.
+   */
+  _createFormChildren(manualDecorators) {
+    const children = this.createCollection();
+
+    children.add(this.urlInputView);
+
+    if (manualDecorators.length) {
+      const additionalButtonsView = new View();
+
+      additionalButtonsView.setTemplate({
+        tag: 'ul',
+        children: this._manualDecoratorSwitches.map(switchButton => ({
+          tag: 'li',
+          children: [switchButton],
+          attributes: {
+            class: ['ck', 'ck-list__item'],
+          },
+        })),
+        attributes: {
+          class: ['ck', 'ck-reset', 'ck-list'],
+        },
+      });
+      children.add(additionalButtonsView);
+    }
+
+    children.add(this.uploadStorageButtonView);
+    children.add(this.saveButtonView);
+    children.add(this.cancelButtonView);
+
+    return children;
+  }
 }
 
 /**
