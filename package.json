@@ -37,19 +37,5 @@
   ],
   "scripts": {
     "lint": "eslint --quiet '**/*.js'"
-  },
-  "lint-staged": {
-    "**/*.js": [
-      "eslint --quiet"
-    ]
-  },
-  "eslintIgnore": [
-    "src/lib/**",
-    "packages/**"
-  ],
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
   }
 }
