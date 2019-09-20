@@ -17,7 +17,7 @@ msgstr ""
 "Plural-Forms: \n"
 
 msgctxt "Toolbar button tooltip for the Upload and link feature."
-msgid "Unload"
+msgid "Upload"
 msgstr "Upload file"
 
 msgctxt "Toolbar button tooltip for the Unlink feature."
